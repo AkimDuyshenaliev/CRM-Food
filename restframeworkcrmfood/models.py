@@ -1,9 +1,7 @@
-# from django.conf import settings
+import datetime
 from django.db import models
-from django.contrib.contenttypes.fields import GenericRelation
-# from django.db.models.signals import post_save
-# from django.dispatch import receiver
-# from rest_framework.authtoken.models import Token
+# from django.db.models import Sum, Min, Max, Avg
+# from django.contrib.contenttypes.fields import GenericRelation
 
 
 class Role(models.Model):
@@ -30,15 +28,6 @@ class User(models.Model):
     
     
 
-
-
-
-# @receiver(post_save, sender=settings.AUTH_USER_MODEL)
-# class UserToken(sender, instance=None, created=False, **kwargs):
-#     if created:
-#         Token.objects.create(User=instance)
-
-
 class Status(models.Model):
     name = models.CharField(max_length=80, default='')
 
@@ -55,14 +44,17 @@ class Table(models.Model):
 
 
 class Order(models.Model):
+    orderNumber = models.CharField(max_length=80, default='Order #')
     status = models.ForeignKey(Status, on_delete=models.CASCADE, default='')
-    waiter = models.CharField(max_length=80, default='')
+    # waiter = models.CharField(max_length=80, default='')
+    waiter = models.ForeignKey(
+        User, on_delete=models.CASCADE, default='', limit_choices_to={'role': 1})
     table = models.ForeignKey(Table, on_delete=models.CASCADE, default='')
     is_it_open = models.BooleanField(default=True)
-    order_date = models.DateField()
+    order_date = models.DateField(auto_now_add=True)
 
     def __str__(self):
-        return 'Order'
+        return self.orderNumber
 
 
 class Department(models.Model):
@@ -94,32 +86,36 @@ class Meal(models.Model):
 
 
 class OrderItem(models.Model):
-    meal = models.ForeignKey(Meal, on_delete=models.CASCADE, default='')
     order = models.ForeignKey(Order, on_delete=models.CASCADE, default='')
+    meal = models.ForeignKey(Meal, on_delete=models.CASCADE, default='')
+    mealCount = models.IntegerField(default='1')
 
+    def __str__(self):
+        name = str(self.order) + ', ' + str(self.meal)
+        return name
 
+            
 
 class ServicePercentage(models.Model):
     percentage = models.CharField(max_length=80, default='')
 
     def __str__(self):
-        return 'Percentage'
+        return self.percentage
 
 
 
 class CheckModel(models.Model):
-    # check_id = models.AutoField()
-    # order_id = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_id', default='')
-    date = models.DateField()
-
-    service_fee = models.CharField(max_length=80, default='')
-    total_sum = models.CharField(max_length=80, default='')
-    meals = models.ManyToManyField(Meal)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, default='')
+    service_fee = models.CharField(max_length=80, default='5')
+    orderedMeals = models.ManyToManyField(
+        OrderItem)
     service_percentage = models.ForeignKey(ServicePercentage, on_delete=models.CASCADE, default='')
+    date = models.DateField()
+    total_sum = models.CharField(max_length=80, default='')
 
     def __str__(self):
-        return 'Check model'
-
+        name = 'Check for ' + str(self.order)
+        return name
 
 
 
